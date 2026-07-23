@@ -327,7 +327,7 @@
     a.addEventListener('click', e => { e.preventDefault(); setAuthTab(a.dataset.tab); });
   });
 
-    document.getElementById('loginSubmit').addEventListener('click', () => {
+    document.getElementById('loginSubmit').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value.trim().toLowerCase();
     const password = document.getElementById('loginPassword').value;
     loginError.classList.remove('show');
@@ -336,13 +336,23 @@
       showError(loginError, 'Enter both your email and password.');
       return;
     }
-    const match = demoAccounts.find(a => a.email.toLowerCase() === email && a.password === password);
-    if(!match){
-      showError(loginError, 'No account matches that email and password.');
-      return;
+
+    const response = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (data.message !== "Login successful") {
+        showError(loginError, data.message || 'No account matches that email and password.');
+        return;
     }
-    setLoggedIn(match);
+
+    setLoggedIn({ name: data.name, email: data.email });
   });
+  
 
     document.getElementById('signupSubmit').addEventListener('click', async () => {
     const name = document.getElementById('signupName').value.trim();
