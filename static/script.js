@@ -344,7 +344,7 @@
     setLoggedIn(match);
   });
 
-    document.getElementById('signupSubmit').addEventListener('click', () => {
+    document.getElementById('signupSubmit').addEventListener('click', async () => {
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim().toLowerCase();
     const password = document.getElementById('signupPassword').value;
@@ -362,13 +362,28 @@
       showError(signupError, 'Password must be at least 6 characters.');
       return;
     }
-    if(demoAccounts.some(a => a.email.toLowerCase() === email)){
-      showError(signupError, 'An account with that email already exists — log in instead.');
-      return;
+
+    const response = await fetch("/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            name,
+            email,
+            password
+        })
+    });
+
+     const data = await response.json();
+
+    if (!response.ok) {
+        showError(signupError, data.detail || "Registration failed.");
+        return;
     }
-    const newUser = { name, email, password };
-    demoAccounts.push(newUser);
-    setLoggedIn(newUser);
+
+    setLoggedIn({ name, email });
+
   });
 
     document.getElementById('loginPassword').addEventListener('keydown', e => { if(e.key === 'Enter') document.getElementById('loginSubmit').click(); });
