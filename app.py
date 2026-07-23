@@ -25,7 +25,7 @@ async def register(request: Request):
             host="localhost",
             database="development",
             user="postgres",
-            password="", # I have password
+            password="Jumpman$357", 
             port="5432"
         )
         cursor = conn.cursor()
@@ -36,7 +36,36 @@ async def register(request: Request):
         conn.commit()
         cursor.close()
         conn.close()
+        
     except Exception as e:
         return {"message": "Registration failed", "detail": str(e)}, 500
 
     return {"message": "Account created"}
+
+@backend.post("/login")
+async def login(request: Request):
+    data = await request.json()
+
+    email = data["email"]
+    password = data["password"]
+
+    
+    conn = psycopg2.connect(
+        host="localhost",
+        database="development",
+        user="postgres",
+        password="", # I have password 
+        port="5432"
+    )
+    
+    cursor = conn.cursor()
+    cursor.execute("SELECT full_name, email FROM candidate WHERE email = %s AND pass = %s", (email, password))   
+        
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if row is None:
+        return {"message": "Invalid email or password"}
+
+    return {"message": "Login successful", "name": row[0], "email": row[1]}
