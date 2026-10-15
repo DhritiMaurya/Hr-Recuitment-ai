@@ -1,12 +1,19 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
+import os
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import psycopg2
+from ai_scanner import process_resume
 
 backend = FastAPI()
 
 backend.mount("/static", StaticFiles(directory="static"), name="static")
+
+base_dir = os.path.dirname(__file__)
+upload_dir = os.path.join(base_dir, "uploads")
+os.makedirs(upload_dir, exist_ok=True)
+
 
 @backend.get("/")
 def home():
@@ -25,7 +32,7 @@ async def register(request: Request):
             host="localhost",
             database="development",
             user="postgres",
-            password="Jumpman$357", 
+            password="", 
             port="5432"
         )
         cursor = conn.cursor()
@@ -54,7 +61,7 @@ async def login(request: Request):
         host="localhost",
         database="development",
         user="postgres",
-        password="", # I have password 
+        password="", 
         port="5432"
     )
     
@@ -69,3 +76,18 @@ async def login(request: Request):
         return {"message": "Invalid email or password"}
 
     return {"message": "Login successful", "name": row[0], "email": row[1]}
+
+@backend.post("/api/scan-resume")
+async def scan_resume(resume: UploadFile = File(...)):
+    required_skills = ["Bilingual", "Communication", "Customer Service"]
+ 
+    saved_path = os.path.join(upload_dir, resume.filename)
+    with open(saved_path, "wb") as f:
+        f.write(await resume.read())
+ 
+    analysis = process_resume(saved_path, required_skills)
+    os.remove(saved_path)
+ 
+    return analysis
+
+
